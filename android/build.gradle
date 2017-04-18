@@ -18,4 +18,5 @@ android {
 dependencies {
     provided 'com.facebook.react:react-native:+'
     compile 'com.yqritc:android-scalablevideoview:1.0.1'
+    compile 'com.danikula:videocache:2.6.4'
 }

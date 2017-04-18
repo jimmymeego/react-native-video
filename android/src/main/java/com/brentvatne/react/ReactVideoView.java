@@ -10,6 +10,8 @@ import android.view.MotionEvent;
 import android.webkit.CookieManager;
 
 import android.widget.MediaController;
+
+import com.danikula.videocache.HttpProxyCacheServer;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.WritableMap;
@@ -221,11 +223,14 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
 
         try {
             if (isNetwork) {
+                HttpProxyCacheServer proxy = ProxyFactory.getProxy(this.getContext());
+                String proxyUrl = proxy.getProxyUrl(uriString);
+
                 // Use the shared CookieManager to access the cookies
                 // set by WebViews inside the same app
                 CookieManager cookieManager = CookieManager.getInstance();
 
-                Uri parsedUrl = Uri.parse(uriString);
+                Uri parsedUrl = Uri.parse(proxyUrl);
                 Uri.Builder builtUrl = parsedUrl.buildUpon();
 
                 String cookie = cookieManager.getCookie(builtUrl.build().toString());
@@ -297,7 +302,7 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
 
         // not async to prevent random crashes on Android playback from local resource due to race conditions
         try {
-          prepare(this);
+          prepareAsync(this);
         } catch (Exception e) {
           e.printStackTrace();
         }
