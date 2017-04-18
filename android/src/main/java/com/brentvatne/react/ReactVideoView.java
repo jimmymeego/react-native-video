@@ -1,6 +1,7 @@
 package com.brentvatne.react;
 
 import android.content.res.AssetFileDescriptor;
+import android.graphics.Matrix;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
@@ -19,6 +20,8 @@ import com.yqritc.scalablevideoview.ScalableVideoView;
 
 import com.android.vending.expansion.zipfile.APKExpansionSupport;
 import com.android.vending.expansion.zipfile.ZipResourceFile;
+import com.yqritc.scalablevideoview.ScaleManager;
+import com.yqritc.scalablevideoview.Size;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -90,6 +93,7 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
     private float mVolume = 1.0f;
     private float mRate = 1.0f;
     private boolean mPlayInBackground = false;
+    private boolean mActiveStatePauseStatus = false;
 
     private int mMainVer = 0;
     private int mPatchVer = 0;
@@ -115,16 +119,18 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
             @Override
             public void run() {
 
-                if (mMediaPlayerValid && !mPaused) {
+                if (mMediaPlayerValid && !isCompleted &&!mPaused) {
                     WritableMap event = Arguments.createMap();
                     event.putDouble(EVENT_PROP_CURRENT_TIME, mMediaPlayer.getCurrentPosition() / 1000.0);
                     event.putDouble(EVENT_PROP_PLAYABLE_DURATION, mVideoBufferedDuration / 1000.0); //TODO:mBufferUpdateRunnable
                     mEventEmitter.receiveEvent(getId(), Events.EVENT_PROGRESS.toString(), event);
+
+                    // Check for update after an interval
+                    // TODO: The update interval is fixed at 250. There is a property in React component that defines this value. Totally ignored !!!
+                    mProgressUpdateHandler.postDelayed(mProgressUpdateRunnable, 250);
                 }
-                mProgressUpdateHandler.postDelayed(mProgressUpdateRunnable, 250);
             }
         };
-        mProgressUpdateHandler.post(mProgressUpdateRunnable);
     }
 
     @Override
@@ -135,6 +141,30 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
         }
 
         return super.onTouchEvent(event);
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+
+        if (!changed || !mMediaPlayerValid) {
+            return;
+        }
+
+        int videoWidth = getVideoWidth();
+        int videoHeight = getVideoHeight();
+
+        if (videoWidth == 0 || videoHeight == 0) {
+            return;
+        }
+
+        Size viewSize = new Size(getWidth(), getHeight());
+        Size videoSize = new Size(videoWidth, videoHeight);
+        ScaleManager scaleManager = new ScaleManager(viewSize, videoSize);
+        Matrix matrix = scaleManager.getScaleMatrix(mScalableType);
+        if (matrix != null) {
+            setTransform(matrix);
+        }
     }
 
     private void initializeMediaPlayerIfNeeded() {
@@ -228,11 +258,19 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
                     }
                 }
                 if(fd==null) {
-                    setRawData(mThemedReactContext.getResources().getIdentifier(
+                    int identifier = mThemedReactContext.getResources().getIdentifier(
+                        uriString,
+                        "drawable",
+                        mThemedReactContext.getPackageName()
+                    );
+                    if (identifier == 0) {
+                        identifier = mThemedReactContext.getResources().getIdentifier(
                             uriString,
                             "raw",
                             mThemedReactContext.getPackageName()
-                    ));
+                        );
+                    }
+                    setRawData(identifier);
                 }
                 else {
                     setDataSource(fd.getFileDescriptor(), fd.getStartOffset(),fd.getLength());
@@ -257,8 +295,11 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
         event.putMap(ReactVideoViewManager.PROP_SRC, src);
         mEventEmitter.receiveEvent(getId(), Events.EVENT_LOAD_START.toString(), event);
 
-        if (!mMediaPlayerValid) {
-            prepareAsync(this);
+        // not async to prevent random crashes on Android playback from local resource due to race conditions
+        try {
+          prepare(this);
+        } catch (Exception e) {
+          e.printStackTrace();
         }
     }
 
@@ -295,6 +336,9 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
         } else {
             if (!mMediaPlayer.isPlaying()) {
                 start();
+
+                // Also Start the Progress Update Handler
+                mProgressUpdateHandler.post(mProgressUpdateRunnable);
             }
         }
     }
@@ -496,14 +540,26 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
 
     @Override
     public void onHostPause() {
-
         if (mMediaPlayer != null && !mPlayInBackground) {
-            mMediaPlayer.pause();
+            mActiveStatePauseStatus = mPaused;
+
+            // Pause the video in background
+            setPausedModifier(true);
         }
     }
 
     @Override
     public void onHostResume() {
+        if (mMediaPlayer != null && !mPlayInBackground) {
+            new Handler().post(new Runnable() {
+                @Override
+                public void run() {
+                    // Restore original state
+                    setPausedModifier(mActiveStatePauseStatus);
+                }
+            });
+
+        }
     }
 
     @Override

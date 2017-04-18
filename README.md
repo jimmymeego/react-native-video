@@ -11,7 +11,7 @@ Run `npm i -S react-native-video`
 
 #### iOS
 
-Install [rnpm](https://github.com/rnpm/rnpm) and run `rnpm link react-native-video`.
+Run `react-native link` to link the react-native-video library.
 
 If you would like to allow other apps to play music over your video component, add:
 
@@ -30,9 +30,9 @@ If you would like to allow other apps to play music over your video component, a
 
 #### Android
 
-Install [rnpm](https://github.com/rnpm/rnpm) and run `rnpm link react-native-video`
+Run `react-native link` to link the react-native-video library.
 
-Or if you have trouble using [rnpm](https://github.com/rnpm/rnpm), make the following additions to the given files manually:
+Or if you have trouble, make the following additions to the given files manually:
 
 **android/settings.gradle**
 
@@ -80,6 +80,51 @@ Under `.addPackage(new MainReactPackage())`:
 .addPackage(new ReactVideoPackage())
 ```
 
+#### Windows
+
+Make the following additions to the given files manually:
+
+**windows/myapp.sln**
+
+Add the `ReactNativeVideo` project to your solution.
+
+1. Open the solution in Visual Studio 2015
+2. Right-click Solution icon in Solution Explorer > Add > Existing Project...
+3. Select `node_modules\react-native-video\windows\ReactNativeVideo\ReactNativeVideo.csproj`
+
+**windows/myapp/myapp.csproj**
+
+Add a reference to `ReactNativeVideo` to your main application project. From Visual Studio 2015:
+
+1. Right-click main application project > Add > Reference...
+2. Check `ReactNativeVideo` from Solution Projects.
+
+**MainPage.cs**
+
+Add the `ReactVideoPackage` class to your list of exported packages.
+```cs
+using ReactNative;
+using ReactNative.Modules.Core;
+using ReactNative.Shell;
+using ReactNativeVideo; // <-- Add this
+using System.Collections.Generic;
+...
+
+        public override List<IReactPackage> Packages
+        {
+            get
+            {
+                return new List<IReactPackage>
+                {
+                    new MainReactPackage(),
+                    new ReactVideoPackage(), // <-- Add this
+                };
+            }
+        }
+
+...
+```
+
 ## Usage
 
 ```javascript
@@ -88,6 +133,9 @@ Under `.addPackage(new MainReactPackage())`:
 // on a single screen if you like.
 
 <Video source={{uri: "background"}}   // Can be a URL or a local file.
+       ref={(ref) => {
+         this.player = ref
+       }}                             // Store reference
        rate={1.0}                     // 0 is paused, 1 is normal.
        volume={1.0}                   // 0 is muted, 1 is normal.
        muted={false}                  // Mutes the audio entirely.
@@ -102,7 +150,14 @@ Under `.addPackage(new MainReactPackage())`:
        onProgress={this.setTime}      // Callback every ~250ms with currentTime
        onEnd={this.onEnd}             // Callback when playback finishes
        onError={this.videoError}      // Callback when video cannot be loaded
+       onBuffer={this.onBuffer} // Callback when remote video is buffering
        style={styles.backgroundVideo} />
+
+// Later to trigger fullscreen
+this.player.presentFullscreenPlayer()
+
+// To set video position in seconds (seek)
+this.player.seek(0)
 
 // Later on in your styles..
 var styles = StyleSheet.create({
@@ -171,16 +226,20 @@ To enable audio to play in background on iOS the audio session needs to be set t
 
 Seeks the video to the specified time (in seconds). Access using a ref to the component
 
+`presentFullscreenPlayer()`
+
+Toggles a fullscreen player. Access using a ref to the component.
+
 ## Examples
 
 - See an [Example integration][1] in `react-native-login` *note that this example uses an older version of this library, before we used `export default` -- if you use `require` you will need to do `require('react-native-video').default` as per instructions above.*
 - Try the included [VideoPlayer example][2] yourself:
 
    ```sh
-   git clone git@github.com:brentvatne/react-native-video.git
-   cd react-native-video/Examples/VideoPlayer
+   git clone git@github.com:react-native-community/react-native-video.git
+   cd react-native-video/example
    npm install
-   open VideoPlayer.xcodeproj
+   open ios/VideoPlayer.xcodeproj
 
    ```
 
@@ -192,7 +251,7 @@ Seeks the video to the specified time (in seconds). Access using a ref to the co
 
 - [ ] Add support for captions
 - [ ] Add support for playing multiple videos in a sequence (will interfere with current `repeat` implementation)
-- [ ] Callback to get buffering progress for remote videos
+- [x] Callback to get buffering progress for remote videos
 - [ ] Bring API closer to HTML5 `<Video>` [reference](http://devdocs.io/html/element/video)
 
 [1]: https://github.com/brentvatne/react-native-login/blob/56c47a5d1e23781e86e19b27e10427fd6391f666/App/Screens/UserInfoScreen.js#L32-L35
