@@ -28,6 +28,16 @@ If you would like to allow other apps to play music over your video component, a
 }
 ```
 
+Add ksyhttpcache.framework to frameworks.
+Add pod dependencies
+**Podfile**
+```
+  pod 'CocoaAsyncSocket'
+	pod 'CocoaLumberjack'
+
+```
+
+
 #### Android
 
 Run `react-native link` to link the react-native-video library.

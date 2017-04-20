@@ -3,6 +3,9 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/UIView+React.h>
+#import <KSYHTTPCache/KSYHTTPProxyService.h>
+
+
 
 static NSString *const statusKeyPath = @"status";
 static NSString *const playbackLikelyToKeepUpKeyPath = @"playbackLikelyToKeepUp";
@@ -296,6 +299,8 @@ static NSString *const playbackRate = @"rate";
   bool isAsset = [RCTConvert BOOL:[source objectForKey:@"isAsset"]];
   NSString *uri = [source objectForKey:@"uri"];
   NSString *type = [source objectForKey:@"type"];
+  uri = [[KSYHTTPProxyService sharedInstance] getProxyUrl:uri];
+
 
   NSURL *url = (isNetwork || isAsset) ?
     [NSURL URLWithString:uri] :

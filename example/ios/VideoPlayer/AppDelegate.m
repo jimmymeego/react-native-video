@@ -11,6 +11,9 @@
 
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTRootView.h>
+#import <KSYHTTPCache/KSYHTTPProxyService.h>
+
+
 
 @implementation AppDelegate
 
@@ -31,7 +34,18 @@
   rootViewController.view = rootView;
   self.window.rootViewController = rootViewController;
   [self.window makeKeyAndVisible];
+  [[KSYHTTPProxyService sharedInstance] startServer];
+
   return YES;
 }
+
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+  [[KSYHTTPProxyService sharedInstance] stopServer];
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+  [[KSYHTTPProxyService sharedInstance] startServer];
+}
+
 
 @end
