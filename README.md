@@ -28,12 +28,35 @@ If you would like to allow other apps to play music over your video component, a
 }
 ```
 
+
+##### Cache Proxy Setup
+
+**AppDelegate.m**
+```objective-c
+#import <KSYHTTPCache/KSYHTTPProxyService.h>
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    [[KSYHTTPProxyService sharedInstance] startServer];
+    return YES;
+}
+- (void)applicationDidEnterBackground:(UIApplication *)application {
+    [[KSYHTTPProxyService sharedInstance] stopServer];
+}
+
+- (void)applicationWillEnterForeground:(UIApplication *)application {
+    [[KSYHTTPProxyService sharedInstance] startServer];
+}
+
+```
+
 Add ksyhttpcache.framework to frameworks.
 Add pod dependencies
 **Podfile**
-```
-  pod 'CocoaAsyncSocket'
-	pod 'CocoaLumberjack'
+```ruby
+pod 'CocoaAsyncSocket'
+pod 'CocoaLumberjack'
 
 ```
 
