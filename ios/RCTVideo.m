@@ -300,7 +300,7 @@ static NSString *const playbackRate = @"rate";
   bool isAsset = [RCTConvert BOOL:[source objectForKey:@"isAsset"]];
   NSString *uri = [source objectForKey:@"uri"];
   NSString *type = [source objectForKey:@"type"];
-  uri = [[KSYHTTPProxyService sharedInstance] getProxyUrl:uri];
+  uri = [[KSYHTTPProxyService sharedInstance] getProxyUrl:uri newCache:NO];
 
 
   NSURL *url = (isNetwork || isAsset) ?
