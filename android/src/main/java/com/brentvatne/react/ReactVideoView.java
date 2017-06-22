@@ -121,7 +121,7 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
             @Override
             public void run() {
 
-                if (mMediaPlayerValid && !isCompleted &&!mPaused) {
+                if (mMediaPlayerValid &&!mPaused) {
                     WritableMap event = Arguments.createMap();
                     event.putDouble(EVENT_PROP_CURRENT_TIME, mMediaPlayer.getCurrentPosition() / 1000.0);
                     event.putDouble(EVENT_PROP_PLAYABLE_DURATION, mVideoBufferedDuration / 1000.0); //TODO:mBufferUpdateRunnable
