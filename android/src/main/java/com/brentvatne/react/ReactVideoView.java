@@ -487,6 +487,9 @@ public class ReactVideoView extends ScalableVideoView implements MediaPlayer.OnP
             if (isCompleted && mVideoDuration != 0 && msec < mVideoDuration) {
                 isCompleted = false;
             }
+            if (!mPaused) {
+                start();
+            }
         }
     }
 
